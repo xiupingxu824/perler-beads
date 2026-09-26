@@ -1,14 +1,22 @@
 package com.perlerbeads.pattern;
 
 import org.springframework.stereotype.Service;
+import com.perlerbeads.file.FileEntity;
+import com.perlerbeads.file.FileMapper;
+import org.springframework.beans.factory.annotation.Value;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Base64;
 import java.util.*;
 
 @Service
 public class PatternService {
+    private final FileMapper fileMapper;
+    @Value("${perler.upload-dir:./uploads}") private String uploadDir;
+    public PatternService(FileMapper fileMapper) { this.fileMapper = fileMapper; }
     private static final List<String[]> PALETTE = List.of(
         new String[]{"A01", "珊瑚红", "#FF6B6B"}, new String[]{"A02", "奶油黄", "#FFD166"},
         new String[]{"A03", "晴空蓝", "#70D6FF"}, new String[]{"A04", "薄荷绿", "#8CE99A"},
@@ -20,7 +28,7 @@ public class PatternService {
         int width = request.width(), height = request.height();
         List<List<String>> matrix = new ArrayList<>();
         Map<String, Integer> counts = new LinkedHashMap<>();
-        BufferedImage image = decodeImage(request.imageBase64());
+        BufferedImage image = decodeImage(request);
         for (int row = 0; row < height; row++) {
             List<String> line = new ArrayList<>();
             for (int col = 0; col < width; col++) {
@@ -45,8 +53,11 @@ public class PatternService {
         return best;
     }
 
-    private BufferedImage decodeImage(String source) {
-        try { if (source == null || source.isBlank()) return null; String raw=source.contains(",") ? source.substring(source.indexOf(',')+1) : source; return ImageIO.read(new ByteArrayInputStream(Base64.getDecoder().decode(raw))); }
+    private BufferedImage decodeImage(PatternDtos.GenerateRequest request) {
+        try {
+            if (request.fileId() != null) { FileEntity file=fileMapper.selectById(request.fileId()); if(file==null) return null; return ImageIO.read(Path.of(file.getFilePath()).toFile()); }
+            String source=request.imageBase64(); if (source == null || source.isBlank()) return null; String raw=source.contains(",") ? source.substring(source.indexOf(',')+1) : source; return ImageIO.read(new ByteArrayInputStream(Base64.getDecoder().decode(raw)));
+        }
         catch (Exception ignored) { return null; }
     }
 }

@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/pattern")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(originPatterns = "*")
 public class PatternController {
     private final PatternService patternService;
     public PatternController(PatternService patternService) { this.patternService = patternService; }

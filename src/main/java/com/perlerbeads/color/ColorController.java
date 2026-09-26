@@ -7,7 +7,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/colors")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(originPatterns = "*")
 public class ColorController {
     private final BeadColorMapper mapper;
     public ColorController(BeadColorMapper mapper) { this.mapper = mapper; }

@@ -13,7 +13,8 @@ public final class PatternDtos {
                                   Long brandId,
                                   Boolean keepRatio,
                                   Boolean dithering,
-                                  String imageBase64) {}
+                                  String imageBase64,
+                                  Long fileId) {}
     public record ColorItem(String code, String name, String hex, int quantity) {}
     public record GenerateResponse(int width, int height, int totalBeads, List<ColorItem> colors, List<List<String>> matrix) {}
 }
