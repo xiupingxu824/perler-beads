@@ -12,7 +12,8 @@ public final class PatternDtos {
                                   @Min(2) @Max(64) Integer maxColors,
                                   Long brandId,
                                   Boolean keepRatio,
-                                  Boolean dithering) {}
+                                  Boolean dithering,
+                                  String imageBase64) {}
     public record ColorItem(String code, String name, String hex, int quantity) {}
     public record GenerateResponse(int width, int height, int totalBeads, List<ColorItem> colors, List<List<String>> matrix) {}
 }

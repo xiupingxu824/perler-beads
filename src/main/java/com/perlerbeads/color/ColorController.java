@@ -1,6 +1,7 @@
 package com.perlerbeads.color;
 
 import com.perlerbeads.common.ApiResponse;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -8,14 +9,11 @@ import java.util.List;
 @RequestMapping("/api/colors")
 @CrossOrigin(origins = "http://localhost:5173")
 public class ColorController {
+    private final BeadColorMapper mapper;
+    public ColorController(BeadColorMapper mapper) { this.mapper = mapper; }
     @GetMapping
-    public ApiResponse<List<ColorView>> list() {
-        return ApiResponse.ok(List.of(
-            new ColorView("A01", "珊瑚红", "#FF6B6B"), new ColorView("A02", "奶油黄", "#FFD166"),
-            new ColorView("A03", "晴空蓝", "#70D6FF"), new ColorView("A04", "薄荷绿", "#8CE99A"),
-            new ColorView("A05", "薰衣草", "#A78BFA"), new ColorView("A06", "蜜桃橙", "#FF9F68"),
-            new ColorView("A07", "深灰", "#34313F"), new ColorView("A08", "象牙白", "#FFFDF8")
-        ));
+    public ApiResponse<List<ColorView>> list(@RequestParam(defaultValue = "1") Long brandId) {
+        return ApiResponse.ok(mapper.selectList(new LambdaQueryWrapper<BeadColorEntity>().eq(BeadColorEntity::getBrandId, brandId).eq(BeadColorEntity::getStatus, 1).orderByAsc(BeadColorEntity::getSort)).stream().map(c -> new ColorView(c.getColorCode(), c.getColorName(), c.getHex())).toList());
     }
     public record ColorView(String code, String name, String hex) {}
 }
