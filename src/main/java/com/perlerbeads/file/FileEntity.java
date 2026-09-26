@@ -8,7 +8,8 @@ import java.time.LocalDateTime;
 @Data
 @TableName("sys_file")
 public class FileEntity {
-    @TableId private Long id;
+    @TableId
+    private String id;
     private String originalName;
     private String fileName;
     private String filePath;

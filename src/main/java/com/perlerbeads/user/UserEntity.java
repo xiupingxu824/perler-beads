@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 @Data
 @TableName("sys_user")
 public class UserEntity {
-    @TableId private Long id;
+    private Long id;
     private String username;
     private String password;
     private String nickname;

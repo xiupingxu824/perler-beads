@@ -14,7 +14,7 @@ public final class PatternDtos {
                                   Boolean keepRatio,
                                   Boolean dithering,
                                   String imageBase64,
-                                  Long fileId) {}
-    public record ColorItem(String code, String name, String hex, int quantity) {}
+                                  String fileId) {}
+    public record ColorItem(Long id, String code, String name, String hex, int quantity) {}
     public record GenerateResponse(int width, int height, int totalBeads, List<ColorItem> colors, List<List<String>> matrix) {}
 }

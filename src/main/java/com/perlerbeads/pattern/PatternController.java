@@ -13,6 +13,10 @@ public class PatternController {
 
     @PostMapping("/generate")
     public ApiResponse<PatternDtos.GenerateResponse> generate(@Valid @RequestBody PatternDtos.GenerateRequest request) {
-        return ApiResponse.ok(patternService.generate(request));
+        try {
+            return ApiResponse.ok(patternService.generate(request));
+        } catch (IllegalArgumentException ex) {
+            return ApiResponse.fail(ex.getMessage());
+        }
     }
 }
