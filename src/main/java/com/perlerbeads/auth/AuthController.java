@@ -14,9 +14,10 @@ import org.springframework.web.bind.annotation.*;
 @CrossOrigin(originPatterns = "*")
 public class AuthController {
     private final UserMapper userMapper;
+    private final JwtService jwtService;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-    public AuthController(UserMapper userMapper) { this.userMapper = userMapper; }
+    public AuthController(UserMapper userMapper, JwtService jwtService) { this.userMapper = userMapper; this.jwtService = jwtService; }
 
     @PostMapping("/login")
     public ApiResponse<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
@@ -25,8 +26,8 @@ public class AuthController {
         if (user == null || user.getStatus() != 1 || !matches(request.password(), user.getPassword())) {
             return ApiResponse.fail("账号或密码错误");
         }
-        // 第一版先返回用户信息；接入 JWT 时在这里生成 token。
-        return ApiResponse.ok(new LoginResponse(user.getId(), user.getUsername(), user.getNickname(), user.getRole(), "demo-session"));
+        String token = jwtService.createToken(user.getId(), user.getUsername(), user.getRole());
+        return ApiResponse.ok(new LoginResponse(user.getId(), user.getUsername(), user.getNickname(), user.getRole(), token, 3600));
     }
 
     private boolean matches(String raw, String stored) {
@@ -34,5 +35,5 @@ public class AuthController {
     }
 
     public record LoginRequest(@NotBlank String username, @NotBlank String password) {}
-    public record LoginResponse(Long id, String username, String nickname, String role, String token) {}
+    public record LoginResponse(Long id, String username, String nickname, String role, String token, long expiresIn) {}
 }
