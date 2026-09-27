@@ -107,7 +107,7 @@ public class ProjectController {
         int totalColors=colorCounts.size(), totalBeads=colorCounts.values().stream().mapToInt(Integer::intValue).sum();
         int legendY=label+data.height()*size+58;
         g.setFont(chineseFont(Font.BOLD,16)); g.setColor(Color.DARK_GRAY);
-        g.drawString("颜色清单："+totalColors+" 种颜色 · 共 "+totalBeads+" 颗",label,legendY);
+        g.drawString("Color："+totalColors+"  · Count： "+totalBeads+"  ",label,legendY);
         g.setFont(chineseFont(Font.BOLD,13));
         int itemY=legendY+30, itemIndex=0;
         for(Map.Entry<String,Integer> entry:legendEntries) {

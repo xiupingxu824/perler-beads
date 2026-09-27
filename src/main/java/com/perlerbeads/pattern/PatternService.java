@@ -22,18 +22,19 @@ public class PatternService {
     @Value("${perler.upload-dir:./uploads}") private String uploadDir;
     public PatternService(FileMapper fileMapper, BeadColorMapper colorMapper) { this.fileMapper = fileMapper; this.colorMapper = colorMapper; }
     public PatternDtos.GenerateResponse generate(PatternDtos.GenerateRequest request) {
-        int width = request.width(), height = request.height();
+        int requestedWidth = request.width(), height = request.height();
         List<PaletteColor> palette = loadPalette(request.brandId());
         if (palette.isEmpty()) throw new IllegalArgumentException("当前品牌没有可用颜色，请先维护 bead_color 颜色库");
         List<List<String>> matrix = new ArrayList<>();
         Map<String, Integer> counts = new LinkedHashMap<>();
         BufferedImage image = decodeImage(request);
         boolean keepRatio = !Boolean.FALSE.equals(request.keepRatio());
+        int width = expandedWidth(image, requestedWidth, height, keepRatio);
         for (int row = 0; row < height; row++) {
             List<String> line = new ArrayList<>();
             for (int col = 0; col < width; col++) {
                 if (image == null) throw new IllegalArgumentException("无法读取上传图片，请重新上传图片");
-                Sample sample = sampleRegion(image, col, row, width, height, keepRatio);
+                Sample sample = sampleRegion(image, col, row, requestedWidth, height, keepRatio);
                 PaletteColor color = nearestColor(palette, sample);
                 line.add(color.code()); counts.merge(color.code(), 1, Integer::sum);
             }
@@ -42,6 +43,21 @@ public class PatternService {
         List<PatternDtos.ColorItem> colors = palette.stream()
             .map(p -> new PatternDtos.ColorItem(p.id(), p.code(), p.name(), p.hex(), counts.getOrDefault(p.code(), 0))).toList();
         return new PatternDtos.GenerateResponse(width, height, width * height, colors, matrix);
+    }
+
+    /**
+     * Keep the previous grid columns exactly as they were and append only the
+     * right-side source area that was outside the old centred crop.
+     */
+    private int expandedWidth(BufferedImage image, int requestedWidth, int targetHeight, boolean keepRatio) {
+        if (image == null || !keepRatio) return requestedWidth;
+        double sourceRatio = (double) image.getWidth() / image.getHeight();
+        double targetRatio = (double) requestedWidth / targetHeight;
+        if (sourceRatio <= targetRatio) return requestedWidth;
+        double visibleWidth = image.getHeight() * targetRatio;
+        double offsetX = (image.getWidth() - visibleWidth) / 2;
+        double sourceWidthPerCell = visibleWidth / requestedWidth;
+        return Math.max(requestedWidth, (int) Math.ceil((image.getWidth() - offsetX) / sourceWidthPerCell));
     }
 
     /**
@@ -109,8 +125,10 @@ public class PatternService {
                 offsetY = (sourceHeight - visibleHeight) / 2;
             }
         }
-        int x0 = (int) Math.floor(offsetX + col * visibleWidth / targetWidth);
-        int x1 = Math.max(x0 + 1, (int) Math.ceil(offsetX + (col + 1) * visibleWidth / targetWidth));
+        double sourceWidthPerCell = visibleWidth / targetWidth;
+        double cellStartX = offsetX + col * sourceWidthPerCell;
+        int x0 = (int) Math.floor(cellStartX);
+        int x1 = Math.max(x0 + 1, (int) Math.ceil(cellStartX + sourceWidthPerCell));
         int y0 = (int) Math.floor(offsetY + row * visibleHeight / targetHeight);
         int y1 = Math.max(y0 + 1, (int) Math.ceil(offsetY + (row + 1) * visibleHeight / targetHeight));
         x0 = Math.max(0, Math.min(image.getWidth() - 1, x0));
