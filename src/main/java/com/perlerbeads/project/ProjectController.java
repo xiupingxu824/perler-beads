@@ -30,6 +30,7 @@ public class ProjectController {
     public ApiResponse<ProjectEntity> save(@RequestBody SaveRequest request) {
         ProjectEntity entity = new ProjectEntity();
 
+        entity.setId(request.id());
         entity.setUserId(request.userId());
         entity.setName(request.name());
         entity.setWidth(request.width());
@@ -43,26 +44,26 @@ public class ProjectController {
         if (entity.getId() == null || mapper.selectById(entity.getId()) == null)
         {
             entity.setId(UUID.randomUUID().toString());
-            entity.setId(null); mapper.insert(entity);
+            mapper.insert(entity);
         }
         else mapper.updateById(entity);
         return ApiResponse.ok(entity);
     }
 
     @GetMapping("/{id}")
-    public ApiResponse<ProjectEntity> get(@PathVariable Long id) { return ApiResponse.ok(mapper.selectById(id)); }
+    public ApiResponse<ProjectEntity> get(@PathVariable String id) { return ApiResponse.ok(mapper.selectById(id)); }
 
     @GetMapping
     public ApiResponse<List<ProjectEntity>> list(@RequestParam Long userId) { return ApiResponse.ok(mapper.selectList(new LambdaQueryWrapper<ProjectEntity>().eq(ProjectEntity::getUserId,userId).eq(ProjectEntity::getDeleted,0).orderByDesc(ProjectEntity::getUpdateTime))); }
 
     @DeleteMapping("/{id}")
-    public ApiResponse<Boolean> delete(@PathVariable Long id) { ProjectEntity p=mapper.selectById(id); if(p!=null){p.setDeleted(1);mapper.updateById(p);} return ApiResponse.ok(true); }
+    public ApiResponse<Boolean> delete(@PathVariable String id) { ProjectEntity p=mapper.selectById(id); if(p!=null){p.setDeleted(1);mapper.updateById(p);} return ApiResponse.ok(true); }
 
     @GetMapping(value="/{id}/export/json", produces="application/json")
-    public ResponseEntity<byte[]> exportJson(@PathVariable Long id) { ProjectEntity p=mapper.selectById(id); return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION,"attachment; filename=perler-pattern.json").body((p==null?"{}":p.getPatternData()).getBytes(StandardCharsets.UTF_8)); }
+    public ResponseEntity<byte[]> exportJson(@PathVariable String id) { ProjectEntity p=mapper.selectById(id); return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION,"attachment; filename=perler-pattern.json").body((p==null?"{}":p.getPatternData()).getBytes(StandardCharsets.UTF_8)); }
 
     @GetMapping(value="/{id}/export/csv", produces="text/csv")
-    public ResponseEntity<byte[]> exportCsv(@PathVariable Long id) throws Exception { ProjectEntity project=mapper.selectById(id); if(project==null) return ResponseEntity.notFound().build(); PatternData data=objectMapper.readValue(project.getPatternData(),PatternData.class); StringBuilder out=new StringBuilder(); for(int row=0;row<data.height();row++){int start=row*data.width(),end=Math.min(start+data.width(),data.cells().size()); out.append(String.join(",",data.cells().subList(start,end))).append('\n');} return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION,"attachment; filename=perler-pattern.csv").body(out.toString().getBytes(StandardCharsets.UTF_8)); }
+    public ResponseEntity<byte[]> exportCsv(@PathVariable String id) throws Exception { ProjectEntity project=mapper.selectById(id); if(project==null) return ResponseEntity.notFound().build(); PatternData data=objectMapper.readValue(project.getPatternData(),PatternData.class); StringBuilder out=new StringBuilder(); for(int row=0;row<data.height();row++){int start=row*data.width(),end=Math.min(start+data.width(),data.cells().size()); out.append(String.join(",",data.cells().subList(start,end))).append('\n');} return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION,"attachment; filename=perler-pattern.csv").body(out.toString().getBytes(StandardCharsets.UTF_8)); }
 
     @GetMapping(value="/{id}/export/png", produces="image/png")
     public ResponseEntity<byte[]> exportPng(@PathVariable String id) throws Exception {
@@ -134,11 +135,11 @@ public class ProjectController {
 
     private Font chineseFont(int style, int size) {
         String[] candidates={"Microsoft YaHei","SimSun","Noto Sans CJK SC","WenQuanYi Zen Hei","Dialog"};
-        java.util.Set<String> available=new java.util.HashSet<>(java.util.Arrays.asList(GraphicsEnvironment.getAvailableFontFamilyNames()));
+        java.util.Set<String> available=new java.util.HashSet<>(java.util.Arrays.asList(GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames()));
         for(String candidate:candidates) if(available.contains(candidate)) { Font font=new Font(candidate,style,size); if(font.canDisplay('颜') && font.canDisplay('色') && font.canDisplay('量')) return font; }
         return new Font("Dialog",style,size);
     }
 
-    public record SaveRequest(Long id, Long userId, @NotBlank String name, Integer width, Integer height, Long brandId, Integer maxColors, String sourceImageId, String patternData) {}
+    public record SaveRequest(String id, Long userId, @NotBlank String name, Integer width, Integer height, Long brandId, Integer maxColors, String sourceImageId, String patternData) {}
     public record PatternData(Integer width, Integer height, List<String> cells, List<String> codes) {}
 }
